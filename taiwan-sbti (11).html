@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>臺灣版 SBTI - 幹話人格測驗</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+        }
+        .container { max-width: 600px; margin: 0 auto; }
+        
+        /* Header */
+        .header { text-align: center; padding: 40px 20px; }
+        h1 {
+            font-size: 2.5em;
+            background: linear-gradient(90deg, #ff6b6b, #feca57, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-size: 200%;
+            animation: gradientMove 3s linear infinite;
+            margin-bottom: 10px;
+        }
+        .subtitle { font-size: 1.2em; color: #aaa; margin-bottom: 20px; }
+        .author { font-size: 0.9em; color: #666; }
+        
+        /* Progress */
+        .progress {
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            height: 30px;
+            margin-bottom: 30px;
+            overflow: hidden;
+            position: relative;
+        }
+        .progress-text {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.85em;
+            color: #aaa;
+            z-index: 10;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3, #54a0ff, #ff6b6b);
+            background-size: 200% 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 20px;
+            animation: rainbowMove 2s linear infinite;
+        }
+        
+        /* Questions */
+        .question-card {
+            background: rgba(255,255,255,0.08);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            display: none;
+            animation: slideUp 0.4s ease;
+        }
+        .question-card.active { display: block; }
+        .question-num { color: #feca57; font-size: 0.9em; margin-bottom: 10px; }
+        .question-text { font-size: 1.3em; margin-bottom: 25px; line-height: 1.6; }
+        
+        .options { display: flex; flex-direction: column; gap: 12px; }
+        .option {
+            background: rgba(255,255,255,0.05);
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 15px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1em;
+        }
+        .option:hover {
+            background: rgba(255,255,255,0.15);
+            border-color: #feca57;
+            transform: translateX(5px);
+            box-shadow: 0 0 20px rgba(254,202,87,0.3);
+        }
+        .option.selected {
+            background: linear-gradient(90deg, rgba(255,107,107,0.3), rgba(254,202,87,0.3));
+            border-color: #feca57;
+        }
+        
+        /* Result */
+        .result-card { display: none; text-align: center; animation: fadeIn 0.8s ease; }
+        .result-card.show { display: block; }
+        
+        /* Result Image - Big Visual */
+        .result-image {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 100px;
+            animation: pulse 2s ease-in-out infinite;
+            box-shadow: 0 0 60px rgba(255,107,107,0.5);
+        }
+        
+        .result-type {
+            font-size: 2em;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+        .match-rate {
+            font-size: 1.2em;
+            color: #feca57;
+            margin-bottom: 15px;
+            padding: 8px 20px;
+            background: rgba(254,202,87,0.1);
+            border-radius: 20px;
+            display: inline-block;
+        }
+        
+        /* Viral Stats */
+        .viral-info {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .viral-stat, .viral-rank {
+            background: rgba(255,255,255,0.1);
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 0.9em;
+        }
+        .viral-stat strong { color: #feca57; }
+        
+        /* Time Info */
+        .time-info {
+            background: rgba(255,255,255,0.1);
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 0.9em;
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+        .result-desc {
+            background: rgba(255,255,255,0.08);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: left;
+            line-height: 1.8;
+        }
+        
+        /* Dimensions */
+        .dimensions {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .dimension {
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+        .dimension-label { font-size: 0.75em; color: #aaa; }
+        .dimension-value { font-size: 1em; color: #feca57; margin-top: 5px; font-weight: bold; }
+        
+        /* Tags */
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            margin: 15px 0;
+        }
+        .tag {
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .disclaimer {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 30px;
+            padding: 15px;
+            background: rgba(255,0,0,0.1);
+            border-radius: 10px;
+        }
+        
+        /* Buttons */
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .next-btn, .share-btn, .restart-btn {
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1em;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s ease;
+        }
+        .next-btn {
+            background: linear-gradient(90deg, #ff6b6b, #feca57);
+            color: #1a1a2e;
+            font-weight: bold;
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        .next-btn.active { opacity: 1; pointer-events: auto; }
+        .share-btn {
+            background: transparent;
+            border: 2px solid #feca57;
+            color: #feca57;
+        }
+        .restart-btn {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+        }
+        .btn-group button:hover { transform: scale(1.05); }
+        
+        /* LINE CTA */
+        .cta-box {
+            background: linear-gradient(135deg, #06C75530, #06C75520);
+            border: 2px solid #06C755;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .cta-box p { margin-bottom: 15px; font-size: 1.1em; }
+        .line-btn {
+            display: inline-block;
+            background: #06C755;
+            color: #fff;
+            padding: 15px 25px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .line-btn:hover { transform: scale(1.05); box-shadow: 0 5px 20px rgba(6,199,85,0.4); }
+        
+        /* Share Preview */
+        .share-preview {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: left;
+        }
+        .preview-label { font-size: 0.85em; color: #aaa; margin-bottom: 10px; }
+        .preview-content {
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 0.9em;
+            white-space: pre-wrap;
+            line-height: 1.6;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        /* Result Background */
+        .result-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+        .result-bg.show { opacity: 1; animation: bgFloat 5s ease-in-out infinite; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes gradientMove { 0% { background-position: 0%; } 100% { background-position: 200%; } }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        @keyframes rainbowMove { 0% { background-position: 0% 0%; } 100% { background-position: 200% 0%; } }
+        @keyframes bgFloat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 臺灣SBTI</h1>
+            <p class="subtitle">幹話人格測驗 - 你也是這樣嗎？</p>
+            <p class="author">原作者：B站@蛆肉兒串兒 | 臺灣改編版</p>
+        </div>
+
+        <div class="progress">
+            <span class="progress-text" id="progressText">第 ${currentQuestion + 1} 題，共 ${questions.length} 題</span>
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+
+        <div id="questionContainer"></div>
+
+        <div class="result-bg" id="resultBg"></div>
+
+        <div class="result-card" id="resultCard">
+            <div class="result-image" id="resultImage"></div>
+            <div class="result-type" id="resultType"></div>
+            <div class="match-rate" id="matchRate"></div>
+            <div class="viral-info" id="viralInfo" style="display:none;"></div>
+            <div class="time-info" id="timeInfo" style="display:none;"></div>
+            <div class="tags" id="resultTags"></div>
+            <div class="result-desc" id="resultDesc"></div>
+            <div class="dimensions" id="dimensions"></div>
+            
+            <div class="btn-group">
+                <button class="share-btn" onclick="shareResult()">📤 複製分享</button>
+                <button class="restart-btn" onclick="restartTest()">🔄 再測一次</button>
+            </div>
+            
+            <!-- Share Preview -->
+            <div class="share-preview" id="sharePreview" style="display:none;">
+                <div class="preview-label">📋 複製的內容：</div>
+                <div class="preview-content" id="previewContent"></div>
+            </div>
+            
+            <div class="cta-box">
+                <p>💡 想認識更多同路人？</p>
+                <a href="https://line.me/ti/g2/rVEeRD_rPH_b01upfJ9Umd7iEO1zOVyIasjSXg?utm_source=invitation&utm_medium=link_copy&utm_campaign=default" target="_blank" class="line-btn">
+                    加入「海鯨匯AI自媒體商務交流」
+                </a>
+            </div>
+            
+            <div class="disclaimer">
+                ⚠️ 本測驗僅供娛樂，別拿它當診斷、面相、分手理由或算命！
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            {
+                text: "早上起床第一句話？",
+                options: [
+                    { text: "幹 X 早，又要上班", score: [3,0,0] },
+                    { text: "再睡 5 分鐘..最後一次", score: [0,3,0] },
+                    { text: "今天要吃什麼", score: [0,0,3] }
+                ]
+            },
+            {
+                text: "看到老闆或主管傳 LINE 訊息時？",
+                options: [
+                    { text: "已讀不回，假裝沒看到", score: [2,1,0] },
+                    { text: "立刻說我在忙", score: [1,2,0] },
+                    { text: "想說直接離職", score: [0,3,0] }
+                ]
+            },
+            {
+                text: "聚餐吃飯時，你都？",
+                options: [
+                    { text: "點最便宜的，然後狂吃", score: [2,1,0] },
+                    { text: "等別人買單", score: [1,2,0] },
+                    { text: "說我在減肥，你們吃", score: [0,2,1] }
+                ]
+            },
+            {
+                text: "你的存款目前？",
+                options: [
+                    { text: "0 元，月光族", score: [3,0,0] },
+                    { text: "沒破產就不錯了", score: [2,1,0] },
+                    { text: "薪水剛領就沒了", score: [3,0,0] }
+                ]
+            },
+            {
+                text: "放假都在做什麼？",
+                options: [
+                    { text: "躺整天，什麼都不想做", score: [3,0,0] },
+                    { text: "滑手機滑一整天", score: [1,2,0] },
+                    { text: "打工，沒有放假這種東西", score: [0,1,2] }
+                ]
+            },
+            {
+                text: "遇到問題或挫折時，你都？",
+                options: [
+                    { text: "先靠北再說", score: [3,0,0] },
+                    { text: "逃避，假裝沒事", score: [1,2,0] },
+                    { text: "靠北然後逃避，最真實", score: [3,0,0] }
+                ]
+            },
+            {
+                text: "你的理財方式？",
+                options: [
+                    { text: "存不了錢，每月花光", score: [3,0,0] },
+                    { text: "買股票，然後被套牢", score: [1,2,0] },
+                    { text: "把錢花掉最實在", score: [2,1,0] }
+                ]
+            },
+            {
+                text: "晚上通常幾點睡？",
+                options: [
+                    { text: "凌晨 2 點後", score: [2,1,0] },
+                    { text: "失眠，睡不著", score: [1,2,0] },
+                    { text: "上班上太晚，累爆", score: [0,2,1] }
+                ]
+            },
+            {
+                text: "目前單身的原因是？",
+                options: [
+                    { text: "沒人追，就這樣", score: [2,1,0] },
+                    { text: "眼光太高，看不上", score: [1,2,0] },
+                    { text: "窮到不敢交男女朋友", score: [3,0,0] }
+                ]
+            },
+            {
+                text: "你的人生目標？",
+                options: [
+                    { text: "活著就好，其他隨緣", score: [3,0,0] },
+                    { text: "希望能早點退休", score: [1,2,0] },
+                    { text: "買房（做夢比較快）", score: [2,1,0] }
+                ]
+            },
+            {
+                text: "週一上班時你的心情？",
+                options: [
+                    { text: "想死，週一症候群", score: [3,0,0] },
+                    { text: "裝死，等下班", score: [2,1,0] },
+                    { text: "還好，已經麻痺了", score: [1,2,0] }
+                ]
+            },
+            {
+                text: "同事借錢時你會？",
+                options: [
+                    { text: "裝窮，說自己吃土", score: [3,0,0] },
+                    { text: "借了，然後後悔", score: [1,1,1] },
+                    { text: "直接說不借", score: [2,1,0] }
+                ]
+            },
+            {
+                text: "收到親戚紅色炸彈時？",
+                options: [
+                    { text: "想裝死不去", score: [3,0,0] },
+                    { text: "錢包瘦一圈", score: [1,2,0] },
+                    { text: "祝福但心痛", score: [2,1,0] }
+                ]
+            },
+            {
+                text: "過年回家被問對象？",
+                options: [
+                    { text: "說太忙沒時間", score: [2,1,0] },
+                    { text: "說還沒遇到對的", score: [1,2,0] },
+                    { text: "直接說不婚主義", score: [3,0,0] }
+                ]
+            },
+            {
+                text: "搭捷運時遇到博愛座？",
+                options: [
+                    { text: "裝睡，假裝沒看到", score: [2,1,0] },
+                    { text: "直接坐，被罵也認了", score: [2,1,0] },
+                    { text: "站到腿斷也不坐", score: [1,2,0] }
+                ]
+            },
+            {
+                text: "午餐吃什麼最常選？",
+                options: [
+                    { text: "隨便，能吃就好", score: [3,0,0] },
+                    { text: "看哪家免排隊", score: [1,2,0] },
+                    { text: "看折扣選最便宜的", score: [2,1,0] }
+                ]
+            },
+            {
+                text: "看到別人炫富時？",
+                options: [
+                    { text: "內心翻白眼，靠北", score: [3,0,0] },
+                    { text: "羨慕但嘴硬說不稀罕", score: [2,1,0] },
+                    { text: "直接按怒", score: [1,1,1] }
+                ]
+            },
+            {
+                text: "朋友一直負能量時？",
+                options: [
+                    { text: "陪他一起罵", score: [2,1,0] },
+                    { text: "找藉口閃人", score: [2,1,0] },
+                    { text: "已讀不回", score: [3,0,0] }
+                ]
+            },
+            {
+                text: "被老闆罵時你想？",
+                options: [
+                    { text: "內心幹譙但不敢說", score: [3,0,0] },
+                    { text: "回家狂罵家人出氣", score: [1,0,2] },
+                    { text: "當作耳邊風", score: [1,2,0] }
+                ]
+            },
+            {
+                text: "看到別人成功時？",
+                options: [
+                    { text: "酸一下比較快", score: [3,0,0] },
+                    { text: "懷疑是不是靠關係", score: [2,1,0] },
+                    { text: "覺得自己也可以", score: [0,2,1] }
+                ]
+            },
+            {
+                text: "朋友一直遲到時？",
+                options: [
+                    { text: "下次不約了", score: [2,1,0] },
+                    { text: "狂催，然後放棄", score: [2,1,0] },
+                    { text: "自己也遲到報復", score: [3,0,0] }
+                ]
+            },
+            {
+                text: "被問工作和薪水時？",
+                options: [
+                    { text: "隨便敷衍帶過", score: [2,1,0] },
+                    { text: "說不多，勉強過活", score: [2,1,0] },
+                    { text: "直接說不想回答", score: [3,0,0] }
+                ]
+            },
+            {
+                text: "看到酸民留言時？",
+                options: [
+                    { text: "想反擊但算了", score: [1,2,0] },
+                    { text: "直接開嗆", score: [2,0,1] },
+                    { text: "已讀，懶得理", score: [1,2,0] }
+                ]
+            },
+            {
+                text: "減肥失敗的原因是？",
+                options: [
+                    { text: "美食太多，無法抗拒", score: [3,0,0] },
+                    { text: "運動好累，想躺下", score: [2,1,0] },
+                    { text: "明天再開始", score: [3,0,0] }
+                ]
+            },
+            {
+                text: "出門前你會？",
+                options: [
+                    { text: "拖延，然後遲到", score: [3,0,0] },
+                    { text: "來不及，隨便穿", score: [2,1,0] },
+                    { text: "早就準備好出門了", score: [0,3,0] }
+                ]
+            },
+            {
+                text: "遇到推銷員時？",
+                options: [
+                    { text: "直接說不需要走人", score: [2,1,0] },
+                    { text: "禮貌拒絕然後快跑", score: [1,2,0] },
+                    { text: "被說服，然後後悔", score: [1,1,1] }
+                ]
+            },
+            {
+                text: "看電影時遇到電話？",
+                options: [
+                    { text: "直接關機或靜音", score: [2,1,0] },
+                    { text: "接起來小聲講", score: [1,1,1] },
+                    { text: "難得接一下算了", score: [1,2,0] }
+                ]
+            },
+            {
+                text: "排隊時有人插隊？",
+                options: [
+                    { text: "內心靠北但不說", score: [2,1,0] },
+                    { text: "直接嗆聲", score: [2,0,1] },
+                    { text: "算了懶得計較", score: [1,2,0] }
+                ]
+            },
+            {
+                text: "遇到政治議題時？",
+                options: [
+                    { text: "直接閃人，不聊", score: [2,1,0] },
+                    { text: "理性討論但很累", score: [1,2,0] },
+                    { text: "直接開戰", score: [3,0,0] }
+                ]
+            },
+            {
+                text: "網購東西 delay 時？",
+                options: [
+                    { text: "狂催客服，然後放棄", score: [2,1,0] },
+                    { text: "佛系等，遲早會到", score: [1,2,0] },
+                    { text: "直接取消訂單", score: [3,0,0] }
+                ]
+            },
+            {
+                text: "朋友一直已讀不回？",
+                options: [
+                    { text: "下次也不秒回他", score: [3,0,0] },
+                    { text: "算了，可能太忙", score: [1,2,0] },
+                    { text: "傳訊息問是不是死了", score: [2,0,1] }
+                ]
+            },
+            {
+                text: "假日被約出門？",
+                options: [
+                    { text: "想拒絕但不好意思", score: [1,2,0] },
+                    { text: "直接說想在家耍廢", score: [3,0,0] },
+                    { text: "看心情再去", score: [1,1,1] }
+                ]
+            },
+            {
+                text: "看到前任的動態？",
+                options: [
+                    { text: "偷偷按讚然後後悔", score: [1,1,1] },
+                    { text: "直接封鎖眼不見為淨", score: [2,1,0] },
+                    { text: "沒差，照滑不誤", score: [1,2,0] }
+                ]
+            },
+            {
+                text: "被問年紀時？",
+                options: [
+                    { text: "說女生年紀是秘密", score: [1,1,1] },
+                    { text: "直接說，無所謂", score: [0,2,1] },
+                    { text: "裝傻說忘了", score: [2,1,0] }
+                ]
+            },
+            {
+                text: "錢包不見時？",
+                options: [
+                    { text: "先靠北十分鐘", score: [3,0,0] },
+                    { text: "冷靜處理，先掛失", score: [0,2,1] },
+                    { text: "覺得自己白癡", score: [2,1,0] }
+                ]
+            }
+        ];
+
+        const results = [
+            { 
+                name: "🔥 頂級酸民", emoji: "😤", color: "#ff6b6b",
+                tags: ["負能量爆棚", "嘴砲王者", "實話實說"],
+                desc: "你的人生充滿負能量，但說的都是實話！看到什麼都想靠北，覺得世界對不起你。放心，你不是一個人，大家都一樣！",
+                dims: ["酸度 98%", "誠實度 95%", "崩潰度 88%"]
+            },
+            { 
+                name: "💀 擺爛大師", emoji: "🛋️", color: "#a29bfe",
+                tags: ["能躺就躺", "隨便至上", "省電王"],
+                desc: "能躺就躺，能省則省。你的人生座右銘就是「隨便啦、都可以、我沒差」。工作只是為了活著，其他都是假的！",
+                dims: ["躺平度 99%", "隨便度 95%", "省錢力 80%"]
+            },
+            { 
+                name: "😤 怨念投射", emoji: "⚡", color: "#fdcb6e",
+                tags: ["日常不爽", "全民公敵", "看不慣"],
+                desc: "你每天都在生氣，但說不出具體在氣什麼。看不慣任何事，覺得全世界都有病。其實你只是太累了...需要休息一下。",
+                dims: ["怨念 92%", "看不慣 90%", "疲憊度 85%"]
+            },
+            { 
+                name: "🗿 打卡上班族", emoji: "🏢", color: "#74b9ff",
+                tags: ["薪水小偷", "等下班", "上班如上香"],
+                desc: "你上班就像上香，每天打卡然後等下班。真正的夢想是成為「薪水小偷」，能在公司混一天是一天！",
+                dims: ["上班如上香 95%", "等下班 90%", "想退休 88%"]
+            },
+            { 
+                name: "🍜 吃貨逃避者", emoji: "🍔", color: "#fd79a8",
+                tags: ["暴食自救", "減肥明天", "食物好朋友"],
+                desc: "心情不好就吃，吃完心情更不好。減肥是明天的事，今天先吃飽再說。食物是你的好朋友，唯一不會背叛你的！",
+                dims: ["吃貨力 90%", "逃避力 85%", "減肥失敗率 99%"]
+            },
+            { 
+                name: "🎮 廢物肥宅", emoji: "🕹️", color: "#a55eea",
+                tags: ["遊戲人生", "現實逃兵", "房間王者"],
+                desc: "遊戲人生，現實崩潰。現實中什麼都做不好，但在遊戲裡你是神。現實太苦了，還是窩在房間最安全！",
+                dims: ["廢物度 95%", "阿宅力 90%", "逃避現實 92%"]
+            },
+            { 
+                name: "💸 月光族", emoji: "💳", color: "#e17055",
+                tags: ["薪水蒸发", "等发薪日", "信用卡奴隶"],
+                desc: "薪水來不及捂熱就沒了！每個月都在等發薪日，然後立刻把錢花光。存款是什麼？能吃嗎？",
+                dims: ["月光指數 99%", "沒錢是日常 95%", "信用卡奴隸 88%"]
+            },
+            { 
+                name: "🌙 熬夜冠軍", emoji: "🌃", color: "#00cec9",
+                tags: ["夜貓子", "睡眠不足", "等晚上"],
+                desc: "凌晨 3 點你還在滑手機。睡覺浪費時間，夜深人靜才是真正屬於你的時間。白天只是在等晚上而已！",
+                dims: ["熬夜力 99%", "睡眠不足 95%", "夜貓程度 98%"]
+            },
+            { 
+                name: "🤡 小丑竟是我", emoji: "🎭", color: "#ffeaa7",
+                tags: ["認清現實", "放棄治療", "全民小丑"],
+                desc: "你終於認清現實了——在這個社會上，每個人都是小丑。努力不會成功，但不努力會更慫。算了，放棄治療吧！",
+                dims: ["認清現實 95%", "小丑度 98%", "放棄治療 90%"]
+            },
+            { 
+                name: "🚗 躺平族", emoji: "🛌", color: "#81ecec",
+                tags: ["不婚不生", "及時行樂", "遠離主流"],
+                desc: "不結婚、不買房、不生小孩！及時行樂最重要！人生這麼苦，幹嘛把自己搞得更苦？快樂最重要，其他都是假的！",
+                dims: ["躺平力 95%", "不婚主義 88%", "及時行樂 92%"]
+            },
+            { 
+                name: "📱 鍵盤勇者", emoji: "⌨️", color: "#d63031",
+                tags: ["鍵盤戰神", "現實慫包", "窩裡橫"],
+                desc: "網路上你很勇，現實中你很慫。在留言區你戰鬥力 100%，現實中連跟老闆說話都不敢。雙面人生，辛苦了！",
+                dims: ["鍵盤力 99%", "現實慫 95%", "窩裡橫 90%"]
+            },
+            { 
+                name: "🏃 逃離大隊", emoji: "✈️", color: "#6c5ce7",
+                tags: ["想遠行", "逃離一切", "不爽現狀"],
+                desc: "你只想逃離這裡！不管是要去其他縣市還是出國，總之就是不想待在這個讓你心累的地方。下一站，逃離！",
+                dims: ["逃離慾望 95%", "想遠行 90%", "不滿現狀 88%"]
+            }
+        ];
+
+        let currentQuestion = 0;
+        let scores = [0, 0, 0];
+        let answers = [];
+        let startTime = null;
+        
+        function init() { 
+            startTime = Date.now();
+            showQuestion(); 
+        }
+
+        function showQuestion() {
+            const container = document.getElementById('questionContainer');
+            container.innerHTML = '';
+            const q = questions[currentQuestion];
+            const card = document.createElement('div');
+            card.className = 'question-card active';
+            card.innerHTML = `
+                <div class="question-num">第 ${currentQuestion + 1} 題 / 共 ${questions.length} 題</div>
+                <div class="question-text">${q.text}</div>
+                <div class="options">
+                    ${q.options.map((opt, i) => `<div class="option" onclick="selectOption(${i}, this)">${opt.text}</div>`).join('')}
+                </div>
+            `;
+            container.appendChild(card);
+            
+            // Update progress bar and text
+            const pct = ((currentQuestion + 1) / questions.length) * 100;
+            document.getElementById('progressBar').style.width = pct + '%';
+            const textEl = document.getElementById('progressText');
+            if(textEl) textEl.textContent = `第 ${currentQuestion + 1} 題 / 共 ${questions.length} 題`;
+        }
+
+        function selectOption(index, el) {
+            // Prevent multiple clicks
+            if (el.classList.contains('selected')) return;
+            
+            document.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+            el.classList.add('selected');
+            
+            const q = questions[currentQuestion];
+            const score = q.options[index].score;
+            for(let i=0; i<3; i++) scores[i] += score[i];
+            answers.push(index);
+            
+            // Immediately go to next question
+            setTimeout(() => {
+                if (currentQuestion < questions.length - 1) {
+                    currentQuestion++;
+                    showQuestion();
+                } else {
+                    showResult();
+                }
+            }, 300);
+        }
+
+        function showResult() {
+            const totalScore = scores.reduce((a, b) => a + b, 0);
+            const resultIndex = totalScore % results.length;
+            const result = results[resultIndex];
+            const matchRate = 70 + Math.floor(Math.random() * 25);
+            
+            document.getElementById('questionContainer').style.display = 'none';
+            document.querySelector('.progress').style.display = 'none';
+            
+            const resultCard = document.getElementById('resultCard');
+            resultCard.classList.add('show');
+            
+            // Show animated background
+            const bg = document.getElementById('resultBg');
+            bg.classList.add('show');
+            bg.style.background = `radial-gradient(circle at center, ${result.color}30 0%, transparent 70%)`;
+            
+            // Show emoji as big visual
+            const img = document.getElementById('resultImage');
+            img.textContent = result.emoji;
+            img.style.background = `linear-gradient(135deg, ${result.color}40, ${result.color}20)`;
+            img.style.boxShadow = `0 0 60px ${result.color}50`;
+            
+            document.getElementById('resultType').textContent = result.name;
+            document.getElementById('resultType').style.color = result.color;
+            document.getElementById('matchRate').textContent = `匹配度 ${matchRate}%`;
+            
+            // Viral: 你是第几位测试者
+            const testCount = 1247 + Math.floor(Math.random() * 100);
+            const viralInfo = document.getElementById('viralInfo');
+            viralInfo.innerHTML = `
+                <div class="viral-stat">📊 你是第 <strong>${testCount}</strong> 位測試者</div>
+                <div class="viral-rank">🏆 此人格人氣排行：第 ${Math.floor(Math.random() * 5) + 1} 名</div>
+            `;
+            viralInfo.style.display = 'block';
+            
+            // Time used
+            const timeUsed = Math.floor((Date.now() - startTime) / 1000);
+            const timeInfo = document.getElementById('timeInfo');
+            timeInfo.innerHTML = `⏱️ 你用了 ${timeUsed} 秒完成測驗`;
+            timeInfo.style.display = 'block';
+            
+            // Tags
+            const tagsContainer = document.getElementById('resultTags');
+            tagsContainer.innerHTML = result.tags.map(t => `<span class="tag">${t}</span>`).join('');
+            
+            document.getElementById('resultDesc').textContent = result.desc;
+            
+            const dimsContainer = document.getElementById('dimensions');
+            dimsContainer.innerHTML = result.dims.map(d => `
+                <div class="dimension">
+                    <div class="dimension-value">${d}</div>
+                </div>
+            `).join('');
+        }
+
+        function shareResult() {
+            const result = document.getElementById('resultType').textContent;
+            const match = document.getElementById('matchRate').textContent;
+            const desc = document.getElementById('resultDesc').textContent;
+            const testCount = 1247 + Math.floor(Math.random() * 100);
+            const timeEl = document.getElementById('timeInfo');
+            const timeText = timeEl ? timeEl.textContent : '';
+            
+            const shareText = `🎯 臺灣SBTI 幹話人格測驗
+
+${result}
+${match}
+📊 你是第 ${testCount} 位測試者
+${timeText}
+
+${desc}
+
+我是「${result.split(' ')[1]}」！你也是嗎？
+快來測看看：
+https://line.me/ti/g2/rVEeRD_rPH_b01upfJ9Umd7iEO1zOVyIasjSXg`;
+            
+            // Copy to clipboard
+            navigator.clipboard.writeText(shareText).then(() => {
+                // Show preview
+                const preview = document.getElementById('sharePreview');
+                const content = document.getElementById('previewContent');
+                preview.style.display = 'block';
+                content.textContent = shareText;
+                alert('✅ 已複製到剪貼簿！\n\n可以直接貼到 LINE 或 FB 分享～');
+            }).catch(() => {
+                alert('複製以下內容分享吧！\n\n' + shareText);
+            });
+        }
+
+        function restartTest() {
+            currentQuestion = 0;
+            scores = [0, 0, 0];
+            answers = [];
+            startTime = Date.now();
+            document.getElementById('questionContainer').style.display = 'block';
+            document.querySelector('.progress').style.display = 'block';
+            document.getElementById('resultCard').classList.remove('show');
+            document.getElementById('resultBg').classList.remove('show');
+            document.getElementById('viralInfo').style.display = 'none';
+            document.getElementById('timeInfo').style.display = 'none';
+            showQuestion();
+        }
+
+        init();
+    </script>
+</body>
+</html>
